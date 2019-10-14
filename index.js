@@ -36,7 +36,7 @@ const callerUserId = async (phone) => {
     }
     /* here we have the record object we can inspect */
     console.log(record);
-    return(record.get('VoiceItUserId');
+    return(record.get('VoiceItUserId'));
   });
 };
 
