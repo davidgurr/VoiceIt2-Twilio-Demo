@@ -13,9 +13,9 @@
   "dependencies": {
     "ejs": "^2.5.6",
     "express": "^4.15.2",
-    "pg": "^7.8.0",
     "twilio": "^3.28.0",
-    "voiceit2-nodejs": "^2.3.1"
+    "voiceit2-nodejs": "^2.3.1",
+    "airtable": "^0.7.1"
   },
   "devDependencies": {
     "request": "^2.81.0",
@@ -23,7 +23,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/voiceittech/voiceit2-ivr-demo"
+    "url": "https://github.com/davidgurr/VoiceIt2-Twilio-Demo"
   },
   "keywords": [
     "node",
