@@ -75,7 +75,7 @@ const incomingCall = async (req, res) => {
           if (err) {
           console.error(err);
           res.send("Error " + err);
-        }
+        });
 
         twiml.redirect('/enroll');
         res.type('text/xml');
