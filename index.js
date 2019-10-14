@@ -1,22 +1,21 @@
-const config = require('./config');
-
-const voiceit2 = require('voiceit2-nodejs')
-let myVoiceIt = new voiceit2(config.apiKey, config.apiToken);
 var numTries = 0;
 
 const twilio = require('twilio');
 const VoiceResponse = twilio.twiml.VoiceResponse;
+const voiceit2 = require('voiceit2-nodejs');
+let myVoiceIt = new voiceit2('key_5d2f60d4a97e45cbbb96dce3c131ea74', 'tok_4c9d99fb0a904935bb6c9de7efba5fab');
 
 const express = require('express')
 const bodyParser = require('body-parser');
 
-const { Pool } = require('pg');
-const pool = new Pool({
-  connectionString: config.dataBaseURL,
-  ssl: true
+const Airtable = require('airtable');
+Airtable.configure({
+  apiKey: 'key3NPCKO9mhhiWUQ'
 });
+const base = Airtble.base('800helpme');
+const table = base('Accounts');
 
-const PORT = process.env.PORT || 5000
+const PORT = process.env.PORT || 80
 
 express()
   .use(bodyParser.urlencoded({extended: true}))
@@ -30,23 +29,20 @@ express()
   .listen(PORT, () => console.log(`Listening on port ${ PORT }`))
 
 const callerUserId = async (phone) => {
-  try {
-    const client = await pool.connect()
-    const result = await client.query('SELECT userId FROM users where phone=\'' + phone + '\'');
-    client.release();
-    // Check for user in db
-    if (Object.keys(result.rows).length !== 0) {
-      return result.rows[0].userid;
-    }
-  } catch (err) {
+  table.find(phone, (err, record) => {
+    if (err) {
       console.error(err);
-  }
-  return 0
+      return 0;
+    }
+    /* here we have the record object we can inspect */
+    console.log(record);
+    return(record.get('VoiceItUserId');
+  });
 };
 
 const incomingCall = async (req, res) => {
   const twiml = new VoiceResponse();
-  const phone = removeSpecialChars(req.body.From);
+  const phone = removeSpecialChars(req.phone);
   const userId = await callerUserId(phone);
 
   // Check for user in VoiceIt db
@@ -73,11 +69,10 @@ const incomingCall = async (req, res) => {
       // Create a new user for new number
       myVoiceIt.createUser(async (jsonResponse)=>{
         speak(twiml, "Welcome to the Voice It Verification Demo, you are a new user and will now be enrolled");
-        try {
-          const client = await pool.connect()
-          const result = await client.query('insert into users values ('+ phone +', \'' + jsonResponse.userId + '\')');
-          client.release();
-        } catch (err) {
+        table.update(id, {
+          "VoiceItUserId": jsonResponse.userId;
+        }, (err, record) => {
+          if (err) {
           console.error(err);
           res.send("Error " + err);
         }
@@ -95,7 +90,7 @@ const incomingCall = async (req, res) => {
 // We need a route to help determine what the caller intends to do.
 const enrollOrVerify = async (req, res) => {
   const digits = req.body.Digits;
-  const phone = removeSpecialChars(req.body.From);
+  const phone = removeSpecialChars(req.phone);
   const twiml = new VoiceResponse();
   const userId = await callerUserId(phone);
   // When the caller asked to enroll by pressing `1`, provide friendly
@@ -145,8 +140,8 @@ const enrollOrVerify = async (req, res) => {
 const enroll = async (req, res) => {
   const enrollCount = req.query.enrollCount || 0;
   const twiml = new VoiceResponse();
-  speak(twiml, 'Please say the following phrase to enroll ');
-  speak(twiml, config.chosenVoicePrintPhrase, config.contentLanguage);
+  speak(twiml, 'After the beep, please say the following phrase to enroll ');
+  speak(twiml, 'Never forget tomorrow is a new day');
 
   twiml.record({
     action: '/process_enrollment?enrollCount=' + enrollCount,
@@ -159,7 +154,7 @@ const enroll = async (req, res) => {
 
 // Process Enrollment
 const processEnrollment = async (req, res) => {
-  const userId = await callerUserId(removeSpecialChars(req.body.From));
+  const userId = await callerUserId(removeSpecialChars(req.phone));
   var enrollCount = req.query.enrollCount;
   const recordingURL = req.body.RecordingUrl + ".wav";
   const twiml = new VoiceResponse();
@@ -182,7 +177,7 @@ const processEnrollment = async (req, res) => {
   }
 
   // Sleep and wait for Twillio to make file available
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  await new Promise(resolve => setTimeout(resolve, 500));
   myVoiceIt.createVoiceEnrollmentByUrl({
     userId: userId,
 	  audioFileURL: recordingURL,
@@ -206,7 +201,7 @@ const verify = async (req, res) => {
   var twiml = new VoiceResponse();
 
   speak(twiml, 'Please say the following phrase to verify your voice ');
-  speak(twiml, config.chosenVoicePrintPhrase, config.contentLanguage);
+  speak(twiml, 'Never forget tomorrow is a new day');
 
   twiml.record({
     action: '/process_verification',
@@ -219,7 +214,7 @@ const verify = async (req, res) => {
 
 // Process Verification
 const processVerification = async (req, res) => {
-  const userId = await callerUserId(removeSpecialChars(req.body.From));
+  const userId = await callerUserId(removeSpecialChars(req.phone));
   const recordingURL = req.body.RecordingUrl + '.wav';
   const twiml = new VoiceResponse();
 
@@ -274,7 +269,7 @@ const processVerification = async (req, res) => {
 
 };
 
-function speak(twiml, textToSpeak, contentLanguage = "en-US"){
+function speak(twiml, textToSpeak, contentLanguage = "en-GB"){
   twiml.say(textToSpeak, {
     voice: "alice",
     language: contentLanguage
