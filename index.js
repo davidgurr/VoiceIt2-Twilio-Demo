@@ -70,7 +70,7 @@ const incomingCall = async (req, res) => {
       myVoiceIt.createUser(async (jsonResponse)=>{
         speak(twiml, "Welcome to the Voice It Verification Demo, you are a new user and will now be enrolled");
         table.update(id, {
-          "VoiceItUserId": jsonResponse.userI
+          "VoiceItUserId": jsonResponse.userId
         }, (err, record) => {
           if (err) {
           console.error(err);
