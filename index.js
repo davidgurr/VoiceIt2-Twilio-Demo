@@ -12,7 +12,7 @@ const Airtable = require('airtable');
 Airtable.configure({
   apiKey: 'key3NPCKO9mhhiWUQ'
 });
-const base = Airtble.base('800helpme');
+const base = Airtable.base('800helpme');
 const table = base('Accounts');
 
 const PORT = process.env.PORT || 80
