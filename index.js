@@ -42,7 +42,7 @@ const callerUserId = async (phone) => {
 
 const incomingCall = async (req, res) => {
   const twiml = new VoiceResponse();
-  const phone = removeSpecialChars(req.phone);
+  const phone = removeSpecialChars(req.body.phone);
   const userId = await callerUserId(phone);
 
   // Check for user in VoiceIt db
@@ -90,7 +90,7 @@ const incomingCall = async (req, res) => {
 // We need a route to help determine what the caller intends to do.
 const enrollOrVerify = async (req, res) => {
   const digits = req.body.Digits;
-  const phone = removeSpecialChars(req.phone);
+  const phone = removeSpecialChars(req.body.phone);
   const twiml = new VoiceResponse();
   const userId = await callerUserId(phone);
   // When the caller asked to enroll by pressing `1`, provide friendly
@@ -154,7 +154,7 @@ const enroll = async (req, res) => {
 
 // Process Enrollment
 const processEnrollment = async (req, res) => {
-  const userId = await callerUserId(removeSpecialChars(req.phone));
+  const userId = await callerUserId(removeSpecialChars(req.body.phone));
   var enrollCount = req.query.enrollCount;
   const recordingURL = req.body.RecordingUrl + ".wav";
   const twiml = new VoiceResponse();
@@ -214,7 +214,7 @@ const verify = async (req, res) => {
 
 // Process Verification
 const processVerification = async (req, res) => {
-  const userId = await callerUserId(removeSpecialChars(req.phone));
+  const userId = await callerUserId(removeSpecialChars(req.body.phone));
   const recordingURL = req.body.RecordingUrl + '.wav';
   const twiml = new VoiceResponse();
 
