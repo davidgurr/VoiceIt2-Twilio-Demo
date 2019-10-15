@@ -40,7 +40,7 @@ const callerUserId = async (phone) => {
     }
     /* here we have the record object we can inspect */
     console.log("cuid - record: %O", records[0]);
-    return(records[0].get('VoiceItUserId'));
+    return(records[0].fields.VoiceItUserId);
   });
 };
 
@@ -68,27 +68,12 @@ const incomingCall = async (req, res) => {
       });
       speak(gather, "You may now log in, or press one to re enroll");
       twiml.redirect('/enroll_or_verify?digits=TIMEOUT');
-      res.type('text/xml');
-      res.send(twiml.toString());
-
     } else {
-      // Create a new user for new number
-      myVoiceIt.createUser(async (jsonResponse)=>{
-        speak(twiml, "Welcome to the Voice It Verification Demo, you are a new user and will now be enrolled");
-        table.update(id, {
-          "VoiceItUserId": jsonResponse.userId
-        }, (err, record) => {
-          if (err) {
-          console.error(err);
-          res.send("Error " + err);
-          }
-	});
-
-        twiml.redirect('/enroll');
-        res.type('text/xml');
-        res.send(twiml.toString());
-      });
+      speak(twiml, "I'm sorry, you don't have a valid voice print account");
     }
+	  
+    res.type('text/xml');
+    res.send(twiml.toString());
   });
 };
 
