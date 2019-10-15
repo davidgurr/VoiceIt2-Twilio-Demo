@@ -8,12 +8,7 @@ let myVoiceIt = new voiceit2('key_5d2f60d4a97e45cbbb96dce3c131ea74', 'tok_4c9d99
 const express = require('express')
 const bodyParser = require('body-parser');
 
-const Airtable = require('airtable');
-Airtable.configure({
-  apiKey: 'key3NPCKO9mhhiWUQ'
-});
-const base = Airtable.base('appufsv2AuVm0gTGt');
-const table = base('Accounts');
+var Airtable = require('airtable');
 
 const PORT = process.env.PORT || 80
 
@@ -29,6 +24,12 @@ express()
   .listen(PORT, () => console.log(`Listening on port ${ PORT }`))
 
 const callerUserId = async (phone) => {
+Airtable.configure({
+  endpointUrl: 'https://api.airtable.com',
+  apiKey: 'key3NPCKO9mhhiWUQ'
+});
+var base = Airtable.base('appufsv2AuVm0gTGt');
+var table = base('Accounts');
 console.log("base: %O", base);
   table.select({
     maxRecords: 1,
