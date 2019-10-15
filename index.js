@@ -9,6 +9,12 @@ const express = require('express')
 const bodyParser = require('body-parser');
 
 var Airtable = require('airtable');
+Airtable.configure({
+  endpointUrl: 'https://api.airtable.com',
+  apiKey: 'key3NPCKO9mhhiWUQ'
+});
+var base = Airtable.base('appufsv2AuVm0gTGt');
+var table = base('Accounts');
 
 const PORT = process.env.PORT || 80
 
@@ -24,17 +30,10 @@ express()
   .listen(PORT, () => console.log(`Listening on port ${ PORT }`))
 
 const callerUserId = async (phone) => {
-Airtable.configure({
-  endpointUrl: 'https://api.airtable.com',
-  apiKey: 'key3NPCKO9mhhiWUQ'
-});
-var base = Airtable.base('appufsv2AuVm0gTGt');
-var table = base('Accounts');
-console.log("phone" + phone);
   table.select({
     maxRecords: 1,
     filterByFormula: '{AccountNo}=' + phone
-  }).firstpage(function(err, records) {
+  }).firstPage(function(err, records) {
     if (err) {
       console.error(err);
       return 0;
