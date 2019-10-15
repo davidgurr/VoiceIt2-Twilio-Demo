@@ -30,18 +30,18 @@ Airtable.configure({
 });
 var base = Airtable.base('appufsv2AuVm0gTGt');
 var table = base('Accounts');
-console.log("base: %O", base);
+console.log("phone" + phone);
   table.select({
     maxRecords: 1,
-    filterByFormula: "{AccountNo}=" + phone
-  }).firstpage((err, records) => {
+    filterByFormula: '{AccountNo}=' + phone
+  }).firstpage(function(err, records) {
     if (err) {
       console.error(err);
       return 0;
     }
     /* here we have the record object we can inspect */
-    console.log(record[0]);
-    return(record[0].get('VoiceItUserId'));
+    console.log(records[0]);
+    return(records[0].get('VoiceItUserId'));
   });
 };
 
