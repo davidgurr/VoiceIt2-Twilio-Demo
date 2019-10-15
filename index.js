@@ -39,17 +39,18 @@ const callerUserId = async (phone) => {
       return 0;
     }
     /* here we have the record object we can inspect */
-    console.log(records[0]);
+    console.log("cuid - record: " + records[0]);
     return(records[0].get('VoiceItUserId'));
   });
 };
 
 const incomingCall = async (req, res) => {
   const twiml = new VoiceResponse();
-console.log("req: %O", req);
   const phone = removeSpecialChars(req.query.phone);
   const userId = await callerUserId(phone);
 
+	console.log("ic - userId: " + userId);
+	
   // Check for user in VoiceIt db
   myVoiceIt.checkUserExists({
     userId :userId
