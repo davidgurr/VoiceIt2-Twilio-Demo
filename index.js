@@ -29,7 +29,10 @@ express()
   .post('/process_verification', (req, res) => processVerification(req, res))
   .listen(PORT, () => console.log(`Listening on port ${ PORT }`))
 
-function callerUserId(phone) {
+function incomingCall(req, res) {
+  const twiml = new VoiceResponse();
+  const phone = removeSpecialChars(req.query.phone);
+	
   table.select({
     maxRecords: 1,
     filterByFormula: '{AccountNo}=' + phone
@@ -39,41 +42,32 @@ function callerUserId(phone) {
       return 0;
     }
     /* here we have the record object we can inspect */
-    console.log("cuid - id: " + records[0].fields.VoiceItUserId);
-    return(records[0].fields.VoiceItUserId);
-  });
-};
-
-function incomingCall(req, res) {
-  const twiml = new VoiceResponse();
-  const phone = removeSpecialChars(req.query.phone);
-  const userId = callerUserId(phone);
-
-	console.log("ic - userId: " + userId);
-	
-  // Check for user in VoiceIt db
-  myVoiceIt.checkUserExists({
-    userId :userId
-  }, async (jsonResponse)=>{
-    // User already exists
-    if(jsonResponse.exists === true) {
-      // Greet the caller when their account profile is recognized by the VoiceIt API.
-      speak(twiml, "Welcome back to the Voice It Verification Demo, your phone number has been recognized");
-      // Let's provide the caller with an opportunity to enroll by typing `1` on
-      // their phone's keypad. Use the <Gather> verb to collect user input
-      const gather = twiml.gather({
-        action: '/enroll_or_verify',
-        numDigits: 1,
-        timeout: 5
-      });
-      speak(gather, "You may now log in, or press one to re enroll");
-      twiml.redirect('/enroll_or_verify?digits=TIMEOUT');
-    } else {
-      speak(twiml, "I'm sorry, you don't have a valid voice print account");
-    }
+    var userId = records[0].fields.VoiceItUserId;
+    console.log("cuid - id: " + userId);
+    // Check for user in VoiceIt db
+    myVoiceIt.checkUserExists({
+      userId :userId
+    }, async (jsonResponse)=>{
+      // User already exists
+      if(jsonResponse.exists === true) {
+        // Greet the caller when their account profile is recognized by the VoiceIt API.
+        speak(twiml, "Welcome back to the Voice It Verification Demo, your phone number has been recognized");
+        // Let's provide the caller with an opportunity to enroll by typing `1` on
+        // their phone's keypad. Use the <Gather> verb to collect user input
+        const gather = twiml.gather({
+          action: '/enroll_or_verify',
+          numDigits: 1,
+          timeout: 5
+        });
+        speak(gather, "You may now log in, or press one to re enroll");
+        twiml.redirect('/enroll_or_verify?digits=TIMEOUT');
+      } else {
+        speak(twiml, "I'm sorry, you don't have a valid voice print account");
+      }
 	  
-    res.type('text/xml');
-    res.send(twiml.toString());
+      res.type('text/xml');
+      res.send(twiml.toString());
+    });
   });
 };
 
