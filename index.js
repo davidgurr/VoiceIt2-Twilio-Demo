@@ -29,10 +29,10 @@ express()
   .listen(PORT, () => console.log(`Listening on port ${ PORT }`))
 
 const callerUserId = async (phone) => {
+console.log("base: %O", base);
   table.select({
     maxRecords: 1,
-    filterByFormula: "{AccountNo}=" + phone,
-    view: "Grid view"
+    filterByFormula: "{AccountNo}=" + phone
   }).firstpage((err, records) => {
     if (err) {
       console.error(err);
