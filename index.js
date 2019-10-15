@@ -60,7 +60,7 @@ function incomingCall(req, res) {
           timeout: 5
         });
         speak(gather, "You may now log in, or press one to re enroll");
-        twiml.redirect('/enroll_or_verify?digits=TIMEOUT');
+        twiml.redirect('/enroll_or_verify?digits=TIMEOUT&userId=' + userId);
       } else {
         speak(twiml, "I'm sorry, you don't have a valid voice print account");
       }
@@ -75,10 +75,11 @@ function incomingCall(req, res) {
 // ------------------------------------
 // We need a route to help determine what the caller intends to do.
 const enrollOrVerify = async (req, res) => {
-  const digits = req.body.Digits;
-  const phone = removeSpecialChars(req.body.phone);
+	console.log("eov - req: %O", req);
+	
+  const digits = req.body.digits;
   const twiml = new VoiceResponse();
-  const userId = await callerUserId(phone);
+  const userId = req.query.userId;
   // When the caller asked to enroll by pressing `1`, provide friendly
   // instructions, otherwise, we always assume their intent is to verify.
   if (digits == 1) {
@@ -88,7 +89,7 @@ const enrollOrVerify = async (req, res) => {
       }, async (jsonResponse)=>{
         console.log("deleteAllEnrollments JSON: ", jsonResponse.message);
         speak(twiml, "You have chosen to re enroll your voice, you will now be asked to say a phrase three times, then you will be able to log in with that phrase");
-        twiml.redirect('/enroll');
+        twiml.redirect('/enroll?userId=' + userId);
         res.type('text/xml');
         res.send(twiml.toString());
     });
@@ -103,7 +104,7 @@ const enrollOrVerify = async (req, res) => {
         const enrollmentsCount = jsonResponse.count;
         console.log("enrollmentsCount: ", enrollmentsCount);
         if(enrollmentsCount > 2){
-          twiml.redirect('/verify');
+          twiml.redirect('/verify?userId=' + userId);
           res.type('text/xml');
           res.send(twiml.toString());
         } else{
@@ -113,7 +114,7 @@ const enrollOrVerify = async (req, res) => {
             userId: userId,
             }, async (jsonResponse)=>{
               console.log("deleteAllEnrollments JSON: ", jsonResponse.message);
-              twiml.redirect('/enroll');
+              twiml.redirect('/enroll?userId=' + userId);
               res.type('text/xml');
               res.send(twiml.toString());
           });
@@ -130,7 +131,7 @@ const enroll = async (req, res) => {
   speak(twiml, 'Never forget tomorrow is a new day');
 
   twiml.record({
-    action: '/process_enrollment?enrollCount=' + enrollCount,
+    action: '/process_enrollment?userId=' + req.query.userId + "&enrollCount=' + enrollCount,
     maxLength: 5,
     trim: 'do-not-trim'
   });
@@ -140,7 +141,7 @@ const enroll = async (req, res) => {
 
 // Process Enrollment
 const processEnrollment = async (req, res) => {
-  const userId = await callerUserId(removeSpecialChars(req.body.phone));
+  const userId = req.query.userId;
   var enrollCount = req.query.enrollCount;
   const recordingURL = req.body.RecordingUrl + ".wav";
   const twiml = new VoiceResponse();
@@ -150,10 +151,10 @@ const processEnrollment = async (req, res) => {
       // VoiceIt requires at least 3 successful enrollments.
       if (enrollCount > 2) {
         speak(twiml, 'Thank you, recording received, you are now enrolled and ready to log in');
-        twiml.redirect('/verify');
+        twiml.redirect('/verify?userId=' + userId);
       } else {
         speak(twiml, 'Thank you, recording received, you will now be asked to record your phrase again');
-        twiml.redirect('/enroll?enrollCount=' + enrollCount);
+        twiml.redirect('/enroll?userId=' + userId + "&enrollCount=' + enrollCount);
       }
   }
 
@@ -190,7 +191,7 @@ const verify = async (req, res) => {
   speak(twiml, 'Never forget tomorrow is a new day');
 
   twiml.record({
-    action: '/process_verification',
+    action: '/process_verification?userId=' + req.query.userId,
     maxLength: '5',
     trim: 'do-not-trim',
   });
@@ -200,7 +201,7 @@ const verify = async (req, res) => {
 
 // Process Verification
 const processVerification = async (req, res) => {
-  const userId = await callerUserId(removeSpecialChars(req.body.phone));
+  const userId = req.query.userId;
   const recordingURL = req.body.RecordingUrl + '.wav';
   const twiml = new VoiceResponse();
 
