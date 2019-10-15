@@ -29,7 +29,7 @@ express()
   .post('/process_verification', (req, res) => processVerification(req, res))
   .listen(PORT, () => console.log(`Listening on port ${ PORT }`))
 
-const callerUserId = async (phone) => {
+const callerUserId(phone){
   table.select({
     maxRecords: 1,
     filterByFormula: '{AccountNo}=' + phone
@@ -47,7 +47,7 @@ const callerUserId = async (phone) => {
 const incomingCall = async (req, res) => {
   const twiml = new VoiceResponse();
   const phone = removeSpecialChars(req.query.phone);
-  const userId = await callerUserId(phone);
+  const userId = callerUserId(phone);
 
 	console.log("ic - userId: " + userId);
 	
