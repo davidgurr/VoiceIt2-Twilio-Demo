@@ -39,7 +39,7 @@ function callerUserId(phone) {
       return 0;
     }
     /* here we have the record object we can inspect */
-    console.log("cuid - record: %O", records[0]);
+    console.log("cuid - id: " + records[0].fields.VoiceItUserId);
     return(records[0].fields.VoiceItUserId);
   });
 };
