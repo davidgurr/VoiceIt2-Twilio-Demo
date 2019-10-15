@@ -43,7 +43,7 @@ const callerUserId = async (phone) => {
 const incomingCall = async (req, res) => {
   const twiml = new VoiceResponse();
 console.log("req: %O", req);
-  const phone = removeSpecialChars(req.body.phone);
+  const phone = removeSpecialChars(req.query.phone);
   const userId = await callerUserId(phone);
 
   // Check for user in VoiceIt db
