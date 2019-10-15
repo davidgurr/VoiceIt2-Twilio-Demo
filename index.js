@@ -29,14 +29,18 @@ express()
   .listen(PORT, () => console.log(`Listening on port ${ PORT }`))
 
 const callerUserId = async (phone) => {
-  table.find(phone, (err, record) => {
+  table.select({
+    maxRecords: 1,
+    filterByFormula: "{AccountNo}=" + phone,
+    view: "Grid view"
+  }).firstpage((err, records) => {
     if (err) {
       console.error(err);
       return 0;
     }
     /* here we have the record object we can inspect */
-    console.log(record);
-    return(record.get('VoiceItUserId'));
+    console.log(record[0]);
+    return(record[0].get('VoiceItUserId'));
   });
 };
 
