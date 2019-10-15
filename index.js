@@ -29,7 +29,7 @@ express()
   .post('/process_verification', (req, res) => processVerification(req, res))
   .listen(PORT, () => console.log(`Listening on port ${ PORT }`))
 
-const callerUserId(phone){
+function callerUserId(phone) {
   table.select({
     maxRecords: 1,
     filterByFormula: '{AccountNo}=' + phone
