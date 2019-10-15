@@ -44,7 +44,7 @@ function callerUserId(phone) {
   });
 };
 
-const incomingCall = async (req, res) => {
+function incomingCall(req, res) {
   const twiml = new VoiceResponse();
   const phone = removeSpecialChars(req.query.phone);
   const userId = callerUserId(phone);
