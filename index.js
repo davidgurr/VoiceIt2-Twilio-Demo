@@ -1,9 +1,10 @@
+const config = require('./config');
 var numTries = 0;
 
 const twilio = require('twilio');
 const VoiceResponse = twilio.twiml.VoiceResponse;
 const voiceit2 = require('voiceit2-nodejs');
-let myVoiceIt = new voiceit2('key_5d2f60d4a97e45cbbb96dce3c131ea74', 'tok_4c9d99fb0a904935bb6c9de7efba5fab');
+let myVoiceIt = new voiceit2(config.apiKey, config.apiToken);
 
 const express = require('express')
 const bodyParser = require('body-parser');
@@ -11,9 +12,9 @@ const bodyParser = require('body-parser');
 var Airtable = require('airtable');
 Airtable.configure({
   endpointUrl: 'https://api.airtable.com',
-  apiKey: 'key3NPCKO9mhhiWUQ'
+  apiKey: config.airTableKey
 });
-var base = Airtable.base('appufsv2AuVm0gTGt');
+var base = Airtable.base(config.airTableBase);
 var table = base('Accounts');
 
 const PORT = process.env.PORT || 80
@@ -50,16 +51,13 @@ function incomingCall(req, res) {
     }, async (jsonResponse)=>{
       // User already exists
       if(jsonResponse.exists === true) {
-        // Greet the caller when their account profile is recognized by the VoiceIt API.
-        speak(twiml, "Welcome back to the Voice It Verification Demo, your phone number has been recognized");
         // Let's provide the caller with an opportunity to enroll by typing `1` on
         // their phone's keypad. Use the <Gather> verb to collect user input
         const gather = twiml.gather({
           action: '/enroll_or_verify',
           numDigits: 1,
-          timeout: 5
+          timeout: 3
         });
-        speak(gather, "You may now log in, or press one to re enroll");
         twiml.redirect('/enroll_or_verify?digits=TIMEOUT&userId=' + userId);
       } else {
         speak(twiml, "I'm sorry, you don't have a valid voice print account");
@@ -150,7 +148,7 @@ const processEnrollment = async (req, res) => {
       enrollCount++;
       // VoiceIt requires at least 3 successful enrollments.
       if (enrollCount > 2) {
-        speak(twiml, 'Thank you, recording received, you are now enrolled and ready to log in');
+        speak(twiml, 'Thank you, recording received, you are now enrolled and ready to verify your voice');
         twiml.redirect('/verify?userId=' + userId);
       } else {
         speak(twiml, 'Thank you, recording received, you will now be asked to record your phrase again');
@@ -187,7 +185,7 @@ const processEnrollment = async (req, res) => {
 const verify = async (req, res) => {
   var twiml = new VoiceResponse();
 
-  speak(twiml, 'Please say the following phrase to verify your voice ');
+  speak(twiml, 'Please say the following phrase after the beep to verify your voice ');
   speak(twiml, 'Never forget tomorrow is a new day');
 
   twiml.record({
@@ -217,7 +215,6 @@ const processVerification = async (req, res) => {
 
       if (jsonResponse.responseCode == "SUCC") {
         speak(twiml, 'Verification successful!');
-        speak(twiml,'Thank you for calling voice its voice biometrics demo. Have a nice day!');
         //Hang up
       } else if (numTries > 2) {
         //3 attempts failed
