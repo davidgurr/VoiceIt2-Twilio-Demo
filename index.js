@@ -215,10 +215,13 @@ const processVerification = async (req, res) => {
 
       if (jsonResponse.responseCode == "SUCC") {
         speak(twiml, 'Verification successful!');
-        //Hang up
+	twiml.redirect('https://webhooks.twilio.com/v1/Accounts/' + req.body.AccountSid + '/Flows/' + config.twilioFlow + '?FlowEvent=return');
+        //Return to Twilio Flow
       } else if (numTries > 2) {
         //3 attempts failed
         speak(twiml,'Too many failed attempts. Please call back and select option 1 to re enroll and verify again.');
+	twiml.redirect('https://webhooks.twilio.com/v1/Accounts/' + req.body.AccountSid + '/Flows/' + config.twilioFlow + '?FlowEvent=failed');
+
       } else {
         switch (jsonResponse.responseCode) {
           case "STTF":
