@@ -131,7 +131,7 @@ const enroll = async (req, res) => {
   speak(twiml, 'Never forget tomorrow is a new day');
 
   twiml.record({
-    action: '/process_enrollment?userId=' + req.query.userId + "&enrollCount=' + enrollCount,
+    action: '/process_enrollment?userId=' + req.query.userId + '&enrollCount=' + enrollCount,
     maxLength: 5,
     trim: 'do-not-trim'
   });
@@ -154,7 +154,7 @@ const processEnrollment = async (req, res) => {
         twiml.redirect('/verify?userId=' + userId);
       } else {
         speak(twiml, 'Thank you, recording received, you will now be asked to record your phrase again');
-        twiml.redirect('/enroll?userId=' + userId + "&enrollCount=' + enrollCount);
+        twiml.redirect('/enroll?userId=' + userId + '&enrollCount=' + enrollCount);
       }
   }
 
