@@ -128,6 +128,8 @@ const enroll = async (req, res) => {
   speak(twiml, 'After the beep, please say the following phrase to enroll ');
   speak(twiml, 'Never forget tomorrow is a new day');
 
+	console.log("user id: " + req.query.userId + ", enrollCount: " + enrollCount);
+	
   twiml.record({
     action: '/process_enrollment?userId=' + req.query.userId + '&enrollCount=' + enrollCount,
     maxLength: 5,
@@ -166,8 +168,8 @@ const processEnrollment = async (req, res) => {
   myVoiceIt.createVoiceEnrollmentByUrl({
     userId: userId,
 	  audioFileURL: recordingURL,
-    phrase: config.chosenVoicePrintPhrase,
-	  contentLanguage: config.contentLanguage,
+    phrase: 'Never forget tomorrow is a new day',
+	  contentLanguage: "en-GB",
 	}, async (jsonResponse)=>{
       console.log("createVoiceEnrollmentByUrl json: ", jsonResponse.message);
       if ( jsonResponse.responseCode === "SUCC" ) {
@@ -208,8 +210,8 @@ const processVerification = async (req, res) => {
   myVoiceIt.voiceVerificationByUrl({
     userId: userId,
   	audioFileURL: recordingURL,
-    phrase: config.chosenVoicePrintPhrase,
-  	contentLanguage: config.contentLanguage,
+    phrase: 'Never forget tomorrow is a new day',
+  	contentLanguage: "en-GB",
   	}, async (jsonResponse)=>{
       console.log("createVoiceVerificationByUrl: ", jsonResponse.message);
 
