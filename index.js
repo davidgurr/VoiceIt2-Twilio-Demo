@@ -225,7 +225,7 @@ const processVerification = async (req, res) => {
       console.log("createVoiceVerificationByUrl: ", jsonResponse.message);
 
       if (jsonResponse.responseCode == "SUCC") {
-        speak(twiml, 'Verification successful!');
+        speak(twiml, 'Verified!');
 	twiml.redirect('https://webhooks.twilio.com/v1/Accounts/' + req.body.AccountSid + '/Flows/' + config.twilioFlow + '?FlowEvent=return');
         //Return to Twilio Flow
       } else if (numTries > 2) {
@@ -237,6 +237,7 @@ const processVerification = async (req, res) => {
 	console.log("Verify response: " + jsonResponse.responseCode);
         switch (jsonResponse.responseCode) {
           case "STTF":
+	  case "NEHSD":
               speak(twiml, "Verification failed. It seems you may not have said your enrolled phrase. Please try again.");
               break;
           case "FAIL":
@@ -248,7 +249,13 @@ const processVerification = async (req, res) => {
           case "SSTL":
               speak(twiml,"Please speak a little quieter and try again.");
               break;
-           case "CNLE":
+          case "SRNR":
+              speak(twiml,"Sound recording does not meet requirements. Please try again.");
+              break;
+          case "RWPW":
+              speak(twiml,"Previous recording use detected. Admin and customer notified.");
+              break;
+          case "CNLE":
               speak(twiml,"Only US English available on free tier");
               break;
           default:
