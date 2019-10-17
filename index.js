@@ -100,7 +100,6 @@ const enrollOrVerify = async (req, res) => {
     myVoiceIt.getAllVoiceEnrollments({
       userId: userId
       }, async (jsonResponse)=>{
-        speak(twiml, "You have chosen to verify your Voice.");
         console.log("jsonResponse.message: ", jsonResponse.message);
         const enrollmentsCount = jsonResponse.count;
         console.log("enrollmentsCount: ", enrollmentsCount);
@@ -235,37 +234,28 @@ const processVerification = async (req, res) => {
 	twiml.redirect('https://webhooks.twilio.com/v1/Accounts/' + req.body.AccountSid + '/Flows/' + config.twilioFlow + '?FlowEvent=failed');
 
       } else {
+	console.log("Verify response: " + jsonResponse.responseCode);
         switch (jsonResponse.responseCode) {
           case "STTF":
               speak(twiml, "Verification failed. It seems you may not have said your enrolled phrase. Please try again.");
-              numTries = numTries + 1;
-              twiml.redirect('/verify');
               break;
           case "FAIL":
               speak(twiml,"Your verification did not pass, please try again.");
-              numTries = numTries + 1;
-              twiml.redirect('/verify');
               break;
           case "SSTQ":
               speak(twiml,"Please speak a little louder and try again.");
-              numTries = numTries + 1;
-              twiml.redirect('/verify');
               break;
           case "SSTL":
               speak(twiml,"Please speak a little quieter and try again.");
-              numTries = numTries + 1;
-              twiml.redirect('/verify');
               break;
            case "CNLE":
               speak(twiml,"Only US English available on free tier");
-              numTries = numTries + 1;
-              twiml.redirect('/verify');
               break;
-         default:
+          default:
               speak(twiml,"Something went wrong. Your verification did not pass, please try again.");
-              numTries = numTries + 1;
-              twiml.redirect('/verify');
           }
+          numTries = numTries + 1;
+          twiml.redirect('/verify?userId=' + userId);
       }
       res.type('text/xml');
       res.send(twiml.toString());
