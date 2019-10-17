@@ -33,7 +33,9 @@ express()
 function incomingCall(req, res) {
   const twiml = new VoiceResponse();
   const phone = removeSpecialChars(req.query.phone);
-	
+
+  console.log("Entered incomingCall");
+
   table.select({
     maxRecords: 1,
     filterByFormula: '{AccountNo}=' + phone
@@ -44,7 +46,7 @@ function incomingCall(req, res) {
     }
     /* here we have the record object we can inspect */
     var userId = records[0].fields.VoiceItUserId;
-    console.log("cuid - id: " + userId);
+
     // Check for user in VoiceIt db
     myVoiceIt.checkUserExists({
       userId :userId
@@ -53,11 +55,11 @@ function incomingCall(req, res) {
       if(jsonResponse.exists === true) {
         // Let's provide the caller with an opportunity to enroll by typing `1` on
         // their phone's keypad. Use the <Gather> verb to collect user input
-        const gather = twiml.gather({
-          action: '/enroll_or_verify',
-          numDigits: 1,
-          timeout: 3
-        });
+        //const gather = twiml.gather({
+          //action: '/enroll_or_verify',
+          //numDigits: 1,
+          //timeout: 3
+        //});
         twiml.redirect('/enroll_or_verify?digits=TIMEOUT&userId=' + userId);
       } else {
         speak(twiml, "I'm sorry, you don't have a valid voice print account");
@@ -73,12 +75,13 @@ function incomingCall(req, res) {
 // ------------------------------------
 // We need a route to help determine what the caller intends to do.
 const enrollOrVerify = async (req, res) => {
-	console.log("eov - req: %O", req);
-	
   const digits = req.body.digits;
   const twiml = new VoiceResponse();
   const userId = req.query.userId;
-  // When the caller asked to enroll by pressing `1`, provide friendly
+
+  console.log("Entered enrollOrVerify");
+	
+// When the caller asked to enroll by pressing `1`, provide friendly
   // instructions, otherwise, we always assume their intent is to verify.
   if (digits == 1) {
     //Delete User's voice enrollments and re-enroll
@@ -125,11 +128,12 @@ const enrollOrVerify = async (req, res) => {
 const enroll = async (req, res) => {
   const enrollCount = req.query.enrollCount || 0;
   const twiml = new VoiceResponse();
+	
+  console.log("Entered enroll");
+	
   speak(twiml, 'After the beep, please say the following phrase to enroll ');
   speak(twiml, 'Never forget tomorrow is a new day');
 
-	console.log("user id: " + req.query.userId + ", enrollCount: " + enrollCount);
-	
   twiml.record({
     action: '/process_enrollment?userId=' + req.query.userId + '&enrollCount=' + enrollCount,
     maxLength: 5,
@@ -146,6 +150,8 @@ const processEnrollment = async (req, res) => {
   const recordingURL = req.body.RecordingUrl + ".wav";
   const twiml = new VoiceResponse();
 
+  console.log("Entered processEnrollment");
+	
   function enrollmentDone(){
       enrollCount++;
       // VoiceIt requires at least 3 successful enrollments.
@@ -169,7 +175,7 @@ const processEnrollment = async (req, res) => {
     userId: userId,
 	  audioFileURL: recordingURL,
     phrase: 'Never forget tomorrow is a new day',
-	  contentLanguage: "en-GB",
+	  contentLanguage: "en-US",
 	}, async (jsonResponse)=>{
       console.log("createVoiceEnrollmentByUrl json: ", jsonResponse.message);
       if ( jsonResponse.responseCode === "SUCC" ) {
@@ -187,6 +193,8 @@ const processEnrollment = async (req, res) => {
 const verify = async (req, res) => {
   var twiml = new VoiceResponse();
 
+  console.log("Entered verify");
+	
   speak(twiml, 'Please say the following phrase after the beep to verify your voice ');
   speak(twiml, 'Never forget tomorrow is a new day');
 
@@ -205,13 +213,15 @@ const processVerification = async (req, res) => {
   const recordingURL = req.body.RecordingUrl + '.wav';
   const twiml = new VoiceResponse();
 
+  console.log("Entered processVerification");
+	
   // Sleep and wait for Twillio to make file available
   await new Promise(resolve => setTimeout(resolve, 1000));
   myVoiceIt.voiceVerificationByUrl({
     userId: userId,
   	audioFileURL: recordingURL,
     phrase: 'Never forget tomorrow is a new day',
-  	contentLanguage: "en-GB",
+  	contentLanguage: "en-US",
   	}, async (jsonResponse)=>{
       console.log("createVoiceVerificationByUrl: ", jsonResponse.message);
 
@@ -246,7 +256,12 @@ const processVerification = async (req, res) => {
               numTries = numTries + 1;
               twiml.redirect('/verify');
               break;
-          default:
+           case "CNLE":
+              speak(twiml,"Only US English available on free tier");
+              numTries = numTries + 1;
+              twiml.redirect('/verify');
+              break;
+         default:
               speak(twiml,"Something went wrong. Your verification did not pass, please try again.");
               numTries = numTries + 1;
               twiml.redirect('/verify');
