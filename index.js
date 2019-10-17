@@ -23,14 +23,13 @@ express()
   .use(bodyParser.urlencoded({extended: true}))
   .use(bodyParser.json())
   .post('/incoming_call', (req, res) => incomingCall(req, res))
-  .post('/enroll_or_verify', (req, res) => enrollOrVerify(req, res))
   .post('/enroll', (req, res) => enroll(req, res))
   .post('/process_enrollment', (req, res) => processEnrollment(req, res))
   .post('/verify', (req, res) => verify(req, res))
   .post('/process_verification', (req, res) => processVerification(req, res))
   .listen(PORT, () => console.log(`Listening on port ${ PORT }`))
 
-function incomingCall(req, res) {
+const incomingCall = async (req, res) => {
   const twiml = new VoiceResponse();
   const phone = removeSpecialChars(req.query.phone);
 
@@ -60,13 +59,34 @@ function incomingCall(req, res) {
           //numDigits: 1,
           //timeout: 3
         //});
-        twiml.redirect('/enroll_or_verify?digits=TIMEOUT&userId=' + userId);
+        myVoiceIt.getAllVoiceEnrollments({
+          userId: userId
+          }, async (jsonResponse)=>{
+            console.log("jsonResponse.message: ", jsonResponse.message);
+            const enrollmentsCount = jsonResponse.count;
+            console.log("enrollmentsCount: ", enrollmentsCount);
+            if(enrollmentsCount > 2){
+              twiml.redirect('/verify?userId=' + userId);
+              res.type('text/xml');
+              res.send(twiml.toString());
+            } else{
+              speak(twiml, "You do not have enough enrollments and need to re enroll your voice.");
+              //Delete User's voice enrollments and re-enroll
+              myVoiceIt.deleteAllEnrollments({
+                userId: userId,
+                }, async (jsonResponse)=>{
+                  console.log("deleteAllEnrollments JSON: ", jsonResponse.message);
+                  twiml.redirect('/enroll?userId=' + userId);
+                  res.type('text/xml');
+                  res.send(twiml.toString());
+              });
+            }
+        });
       } else {
         speak(twiml, "I'm sorry, you don't have a valid voice print account");
+        res.type('text/xml');
+        res.send(twiml.toString());
       }
-	  
-      res.type('text/xml');
-      res.send(twiml.toString());
     });
   });
 };
