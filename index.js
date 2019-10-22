@@ -23,7 +23,7 @@ express()
   .use(bodyParser.urlencoded({extended: true}))
   .use(bodyParser.json())
   .post('/incoming_call', (req, res) => incomingCall(req, res))
-  .post('/enroll', (req, res) => enroll(req, res))
+  .post('/enrollorrenroll', (req, res) => enrollOrReEnroll(req, res))
   .post('/process_enrollment', (req, res) => processEnrollment(req, res))
   .post('/verify', (req, res) => verify(req, res))
   .post('/process_verification', (req, res) => processVerification(req, res))
@@ -94,17 +94,23 @@ const incomingCall = async (req, res) => {
 // Routing Enrollments & Verification
 // ------------------------------------
 // We need a route to help determine what the caller intends to do.
-const enrollOrVerify = async (req, res) => {
-  const digits = req.body.digits;
+const enrollOrReEnroll = async (req, res) => {
   const twiml = new VoiceResponse();
-  const userId = req.query.userId;
+  const phone = removeSpecialChars(req.query.phone);
 
   console.log("Entered enrollOrVerify");
-	
-// When the caller asked to enroll by pressing `1`, provide friendly
-  // instructions, otherwise, we always assume their intent is to verify.
-  if (digits == 1) {
-    //Delete User's voice enrollments and re-enroll
+
+  table.select({
+    maxRecords: 1,
+    filterByFormula: '{AccountNo}=' + phone
+  }).firstPage(function(err, records) {
+    if (err) {
+      console.error(err);
+      return 0;
+    }
+    /* here we have the record object we can inspect */
+    var userId = records[0].fields.VoiceItUserId;
+
     myVoiceIt.deleteAllEnrollments({
       userId: userId,
       }, async (jsonResponse)=>{
@@ -113,34 +119,8 @@ const enrollOrVerify = async (req, res) => {
         twiml.redirect('/enroll?userId=' + userId);
         res.type('text/xml');
         res.send(twiml.toString());
-    });
-
-  } else {
-    //Check for number of enrollments > 2
-    myVoiceIt.getAllVoiceEnrollments({
-      userId: userId
-      }, async (jsonResponse)=>{
-        console.log("jsonResponse.message: ", jsonResponse.message);
-        const enrollmentsCount = jsonResponse.count;
-        console.log("enrollmentsCount: ", enrollmentsCount);
-        if(enrollmentsCount > 2){
-          twiml.redirect('/verify?userId=' + userId);
-          res.type('text/xml');
-          res.send(twiml.toString());
-        } else{
-          speak(twiml, "You do not have enough enrollments and need to re enroll your voice.");
-          //Delete User's voice enrollments and re-enroll
-          myVoiceIt.deleteAllEnrollments({
-            userId: userId,
-            }, async (jsonResponse)=>{
-              console.log("deleteAllEnrollments JSON: ", jsonResponse.message);
-              twiml.redirect('/enroll?userId=' + userId);
-              res.type('text/xml');
-              res.send(twiml.toString());
-          });
-        }
-    });
-  }
+    });	 
+  });
 };
 
 // Enrollment Recording
